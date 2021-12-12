@@ -1,0 +1,17 @@
+{
+  "name": "ml",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs": "^3.12.0",
+    "@tensorflow/tfjs-node": "^3.12.0",
+    "@tensorflow/tfjs-vis": "^1.5.1",
+    "node-gyp": "^8.4.1"
+  }
+}
