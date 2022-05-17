@@ -1,7 +1,7 @@
 const fs = require("fs/promises");
 const tf = require("@tensorflow/tfjs");
 
-const SHUFFLE = 10;
+const BATCH_SIZE = 32;
 
 async function getFilenames(type, dataType) {
     try {
@@ -25,7 +25,8 @@ async function getData(type, dataType) {
     const filenames = await getFilenames(type, dataType);
     const data = [];
     for (let filename of filenames) {
-        const file = await getFile(type, filename, dataType);
+        let file = await getFile(type, filename, dataType);
+        file = file.div(255);
         data.push(file);
     }
     return tf.data.array(data);
@@ -39,37 +40,27 @@ async function getLabels(size, label) {
     return tf.data.array(labels);
 }
 
-async function getTrainDataset() {
-    const paperData = await getData('paper', 'train');
-    const rockData = await getData('rock', 'train');
-    const scissorsData = await getData('scissors', 'train');
+async function getDataset(dataType) {
+    const paperData = await getData('paper', dataType);
+    const rockData = await getData('rock', dataType);
+    const scissorsData = await getData('scissors', dataType);
 
-    const paperLabels = await getLabels(paperData.size, 1);
-    const rockLabels = await getLabels(rockData.size, 2);
-    const scissorsLabels = await getLabels(scissorsData.size, 3);
+    const paperLabels = await getLabels(paperData.size, [1, 0, 0]);
+    const rockLabels = await getLabels(rockData.size, [0, 1, 0]);
+    const scissorsLabels = await getLabels(scissorsData.size, [0, 0, 1]);
 
     const data = paperData.concatenate(rockData).concatenate(scissorsData);
     const labels = paperLabels.concatenate(rockLabels).concatenate(scissorsLabels);
 
-    return tf.data.zip({xs: data, ys: labels}).batch(3);
+    return tf.data.zip({xs: data, ys: labels}).shuffle(372, Math.random().toString()).batch(8);
+}
+
+async function getTrainDataset() {
+    return getDataset('train');
 }
 
 async function getTestDataset() {
-    const paperData = await getData('paper', 'test');
-    const rockData = await getData('rock', 'test');
-    const scissorsData = await getData('scissors', 'test');
-
-    const paperLabels = await getLabels(paperData.size, 1);
-    const rockLabels = await getLabels(rockData.size, 2);
-    const scissorsLabels = await getLabels(scissorsData.size, 3);
-
-    const data = paperData.concatenate(rockData).concatenate(scissorsData);
-    const labels = paperLabels.concatenate(rockLabels).concatenate(scissorsLabels);
-
-    return tf.data.zip({xs: data, ys: labels}).batch(3).shuffle(SHUFFLE);
+    return getDataset('test');
 }
 
-module.exports = {
-    getTrainDataset,
-    getTestDataset
-};
+module.exports = {getTrainDataset, getTestDataset};
